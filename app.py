@@ -22,18 +22,18 @@ def check_env_vars():
 
 # Initialize the AzureOpenAI client
 openai = AzureOpenAI(
-    api_version='2024-06-01',
-    azure_endpoint=os.getenv('AZURE_OPENAI_ENDPOINT'),
-    api_key=os.getenv('AZURE_OPENAI_API_KEY')
+        api_version='2024-06-01',
+        azure_endpoint=os.getenv('AZURE_OPENAI_ENDPOINT'),
+        api_key=os.getenv('AZURE_OPENAI_API_KEY')
 )
 
 
 # Function to clone a Git repository
-def clone_repo(repo_url, clone_dir='cloned_repo'):
+def clone_repo(repo_url, branch='main', clone_dir='cloned_repo'):
     if os.path.exists(clone_dir):
         subprocess.run(['rm', '-rf', clone_dir])
     os.makedirs(clone_dir, exist_ok=True)
-    git.Repo.clone_from(repo_url, clone_dir)
+    git.Repo.clone_from(repo_url, clone_dir, branch=branch)
     return clone_dir
 
 
@@ -98,9 +98,9 @@ def extract_repo_details(clone_dir):
 
 
 # Function to generate a file using the OpenAI API based on a given prompt
-def generate_file(prompt):
+def generate_file(prompt, model):
     response = openai.chat.completions.create(
-        model='gpt-35-turbo-16k',
+        model=model,
         messages=[
             {'role': 'system',
              'content': 'Return only the content of the file. Do not provide additional information.'},
@@ -111,33 +111,33 @@ def generate_file(prompt):
 
 
 # Function to generate devcontainer.json based on project details
-def generate_devcontainer(data):
+def generate_devcontainer(data, model):
     prompt = f'Generate devcontainer.json for a project with the following details: {json.dumps(data)}'
-    return generate_file(prompt)
+    return generate_file(prompt, model)
 
 
 # Function to generate Dockerfile based on project details
-def generate_dockerfile(data):
+def generate_dockerfile(data, model):
     prompt = f'Generate a Dockerfile for a project with the following details: {json.dumps(data)}'
-    return generate_file(prompt)
+    return generate_file(prompt, model)
 
 
 # Function to generate requirements.txt based on project details
-def generate_requirements(data):
+def generate_requirements(data, model):
     prompt = f'Generate requirements.txt for a project with the following details: {json.dumps(data)}'
-    return generate_file(prompt)
+    return generate_file(prompt, model)
 
 
 # Function to generate SBOM (Software Bill of Materials) based on project details
-def generate_sbom(data):
+def generate_sbom(data, model):
     prompt = f'Generate a Software Bill of Materials (SBOM) for a project with the following details: {json.dumps(data)}'
-    return generate_file(prompt)
+    return generate_file(prompt, model)
 
 
 # Function to generate README.md based on project details
-def generate_readme(data):
+def generate_readme(data, model):
     prompt = f'Generate a README.md for a project with the following details: {json.dumps(data)}'
-    return generate_file(prompt)
+    return generate_file(prompt, model)
 
 
 # Function to save content to a specified file in a specified directory
@@ -148,32 +148,32 @@ def save_to_file(directory, filename, content):
 
 
 # Function to process the repository by cloning it and extracting details
-def process_repo(repo_url):
-    clone_dir = clone_repo(repo_url)
+def process_repo(repo_url, branch):
+    clone_dir = clone_repo(repo_url, branch=branch)
     details = extract_repo_details(clone_dir)
     return details, clone_dir
 
 
 # Function to generate selected files based on user choices and save them in the cloned repository directory
-def generate_files(details, clone_dir, files_to_generate):
+def generate_files(details, clone_dir, files_to_generate, model):
     if 'devcontainer' in files_to_generate:
-        devcontainer_content = generate_devcontainer(details)
+        devcontainer_content = generate_devcontainer(details, model)
         save_to_file(clone_dir, 'devcontainer.json', devcontainer_content)
 
     if 'dockerfile' in files_to_generate:
-        dockerfile_content = generate_dockerfile(details)
+        dockerfile_content = generate_dockerfile(details, model)
         save_to_file(clone_dir, 'Dockerfile', dockerfile_content)
 
     if 'requirements' in files_to_generate:
-        requirements_content = generate_requirements(details)
+        requirements_content = generate_requirements(details, model)
         save_to_file(clone_dir, 'requirements.txt', requirements_content)
 
     if 'sbom' in files_to_generate:
-        sbom_content = generate_sbom(details)
+        sbom_content = generate_sbom(details, model)
         save_to_file(clone_dir, 'SBOM.txt', sbom_content)
 
     if 'readme' in files_to_generate:
-        readme_content = generate_readme(details)
+        readme_content = generate_readme(details, model)
         save_to_file(clone_dir, 'README.md', readme_content)
 
     return 'Selected files have been generated and saved.'
@@ -188,13 +188,25 @@ def main():
         return
 
     repo_url = st.text_input("Enter the repository URL:")
+    branch = st.text_input("Enter the branch (default is 'main'):", "main")
+    model_choice = st.radio(
+        "Choose the model:",
+        ("GPT 3.5 16k", "GPT-4o", "Input your own model")
+    )
+
+    if model_choice == "Input your own model":
+        model = st.text_input("Enter your model:")
+    else:
+        model = "gpt-4o" if model_choice == "GPT-4o" else "gpt-35-turbo-16k"
+
     if st.button("Process Repository"):
         if repo_url:
             with st.spinner("Processing..."):
-                details, clone_dir = process_repo(repo_url)
+                details, clone_dir = process_repo(repo_url, branch)
                 st.success("Repository processed successfully!")
                 st.session_state['details'] = details  # Store details in session state
                 st.session_state['clone_dir'] = clone_dir  # Store clone directory in session state
+                st.session_state['model'] = model  # Store model choice in session state
                 st.json(details)
         else:
             st.error("Please enter a repository URL.")
@@ -210,7 +222,7 @@ def main():
             if files_to_generate:
                 with st.spinner("Generating files..."):
                     result = generate_files(st.session_state['details'], st.session_state['clone_dir'],
-                                            files_to_generate)
+                                            files_to_generate, st.session_state['model'])
                     st.success(result)
             else:
                 st.error("Please select at least one file to generate.")
