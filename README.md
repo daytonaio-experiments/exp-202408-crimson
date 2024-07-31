@@ -42,7 +42,7 @@ graph TD
     C -->|os, subprocess| D[Detect Primary Language]
     D -->|os| E[Find Dependency Files]
     E -->|GitPython| F[Extract Project Name and Author]
-    F -->|AzureOpenAI| G{Generate Artifacts}
+    F -->|AzureOpenAI, gpt-35-turbo-16k| G{Generate Artifacts}
     G --> H[Generate devcontainer.json]
     G --> I[Generate Dockerfile]
     G --> J[Generate requirements.txt]
@@ -58,4 +58,14 @@ graph TD
     O --> R
     P --> R
     Q --> R
+    subgraph Supported Languages
+        py[Python]
+        js[JavaScript]
+        java[Java]
+        cpp[C++]
+        rb[Ruby]
+        go[Go]
+        php[PHP]
+        cs[C#]
+    end
 ```
