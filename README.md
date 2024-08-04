@@ -33,6 +33,37 @@ This project aims to automate the setup of reproducible development environments
 - **Reliability:**
     - Ensure high reliability and accuracy in generating the required artifacts.
 
+### Installation
+This project requires Python 3.9 or higher.
+
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/daytonaio-experiments/exp-202408-crimson.git
+    cd exp-202408-crimson
+    ```
+2. Install the required packages:
+    1. Using pipenv (recommended):
+        ```bash
+        pip install pipenv
+        pipenv install
+        ```
+    2. Using pip:
+        ```bash
+        pip install -r requirements.txt
+        ```
+    
+3. Fill out the .env file:
+    ```bash
+    cp .env.example .env
+    vim .env # Fill in the required values
+    ```
+
+4. Run the Streamlit app:
+    ```bash
+    streamlit run app.py
+    ```
+5. Open the Streamlit app in your browser (usually at `http://localhost:8501`).
+
 ### System Architecture
 
 ```mermaid
