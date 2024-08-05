@@ -45,6 +45,7 @@ This project requires Python 3.9 or higher.
         ```bash
         pip install pipenv
         pipenv install
+        pipenv shell
         ```
     2. Using pip:
         ```bash
