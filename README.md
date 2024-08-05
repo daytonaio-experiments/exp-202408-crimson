@@ -1,4 +1,3 @@
-# ⚠️THIS IS THE EXPERIMENTAL BRANCH⚠️
 # Automated Generation of Standardized Development Environments
 
 ### Overview
